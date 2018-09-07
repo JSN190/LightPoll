@@ -18,6 +18,7 @@ router.get("/poll/:id", [param("id").isNumeric()], async (req, res) => {
             if (record.rows.length !== 1) {
                 res.status(404);
                 res.send({ error: true, details: `Poll ${req.params.id} not found.`});
+                return;
             }
             const options = await database.query({
                 text: "SELECT poll_options.id, poll_options.value, count(poll_votes.id) AS votes \
