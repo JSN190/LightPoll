@@ -21,7 +21,7 @@ async function initialise () {
             (id bigserial PRIMARY KEY, \
             poll_id bigint REFERENCES polls (id) NOT NULL, \
             value varchar(140) NOT NULL, \
-            created timestamp NOT NULL)"
+            created timestamp NOT NULL)";
         const createPollVotes = "CREATE TABLE IF NOT EXISTS poll_votes \
             (id bigserial PRIMARY KEY, \
             poll_id bigint REFERENCES polls (id) NOT NULL, \
@@ -32,7 +32,7 @@ async function initialise () {
         await client.query(createPollOptions);
         await client.query(createPollVotes);
         await client.query("COMMIT");
-        console.log(`Connected to PostgreSQL.`)
+        console.log(`Connected to PostgreSQL.`);
     } catch (e) {
         await client.query("ROLLBACK");
         console.log(e);
