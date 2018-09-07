@@ -1,0 +1,29 @@
+{
+  "name": "lightpoll",
+  "version": "1.0.0",
+  "description": "Create and share ad hoc polls instantaneously without registration.",
+  "main": "app.js",
+  "scripts": {
+    "watch": "nodemon app.js",
+    "start": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JSN190/LightPoll.git"
+  },
+  "author": "John Su",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/JSN190/LightPoll/issues"
+  },
+  "homepage": "https://github.com/JSN190/LightPoll#readme",
+  "dependencies": {
+    "cors": "^2.8.4",
+    "dotenv": "^6.0.0",
+    "express": "^4.16.3",
+    "express-validator": "^5.3.0",
+    "node-fetch": "^2.2.0",
+    "path": "^0.12.7",
+    "pg": "^7.4.3"
+  }
+}
