@@ -44,6 +44,41 @@ router.get("/poll/:id", [param("id").isNumeric()], async (req, res) => {
     }
 });
 
+router.delete("/poll/:id", [param("id").isNumeric()], async (req, res) => {
+    res.type("application/json");
+    const errors = validationResult(req);
+    if (errors.isEmpty()) {
+        const client = await database.connect();
+        try {
+            await client.query("BEGIN");
+            await client.query({
+                text: "DELETE FROM poll_votes WHERE poll_id=$1",
+                values: [req.params.id]
+            });
+            await client.query({
+                text: "DELETE FROM poll_options WHERE poll_id=$1",
+                values: [req.params.id]
+            });
+            await client.query({
+                text: "DELETE FROM polls WHERE id=$1",
+                values: [req.params.id]
+            });
+            await client.query("COMMIT");
+            res.send({ success: true, id: Number(req.params.id) });
+        } catch (e) {
+            await client.query("ROLLBACK");
+            console.log(e);
+            res.status(500);
+            res.send({ error: true });
+        } finally {
+            client.release();
+        }
+    } else {
+        res.status(400);
+        res.send({ error: true, details: errors.array() });
+    }
+});
+
 router.post("/poll", [
         check("name").exists().isAscii().isLength({ max: 140 }),
         check("description").optional().isAscii().isLength({ max: 500 }),
