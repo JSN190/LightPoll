@@ -14,7 +14,7 @@ async function initialise () {
         const createPolls = "CREATE TABLE IF NOT EXISTS polls \
             (id bigserial PRIMARY KEY, \
             name varchar(140) NOT NULL, \
-            description varchar(500), \
+            description varchar(500) NOT NULL, \
             owner_id bigint REFERENCES users (id), \
             created timestamp NOT NULL)";
         const createPollOptions = "CREATE TABLE IF NOT EXISTS poll_options \
