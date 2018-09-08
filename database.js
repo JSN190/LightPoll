@@ -16,7 +16,8 @@ async function initialise () {
             name varchar(140) NOT NULL, \
             description varchar(500) NOT NULL, \
             owner_id bigint REFERENCES users (id), \
-            created timestamp NOT NULL)";
+            created timestamp NOT NULL, \
+            modified timestamp NOT NULL)";
         const createPollOptions = "CREATE TABLE IF NOT EXISTS poll_options \
             (id bigserial PRIMARY KEY, \
             poll_id bigint REFERENCES polls (id) NOT NULL, \
@@ -27,6 +28,10 @@ async function initialise () {
             poll_id bigint REFERENCES polls (id) NOT NULL, \
             poll_option_id bigint REFERENCES poll_options (id) NOT NULL, \
             created timestamp NOT NULL)";
+        const setPollModified = "CREATE FUNCTION set_poll_modified() RETURNS \
+            TRIGGER AS $$ BEGIN NEW.modified :=NOW(); RETURN NEW; END; $$ LANGUAGE plpgsql; \
+            CREATE TRIGGER set_poll_modified BEFORE UPDATE ON polls FOR EACH ROW \
+            EXECUTE PROCEDURE set_poll_modified();";
         await client.query(createUsers);
         await client.query(createPolls);
         await client.query(createPollOptions);
