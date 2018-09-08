@@ -17,7 +17,9 @@ app.use(express.urlencoded({
 
 // Routes
 const pollRoutes = require(path.join(__dirname, "./routes/poll.js"));
+const authRoutes = require(path.join(__dirname, "./routes/auth.js"));
 app.use(pollRoutes);
+app.use(authRoutes);
 
 app.listen(process.env.LIGHTPOLL_PORT, () => {
     console.log(`Started Express.js on port ${process.env.LIGHTPOLL_PORT}.`);
