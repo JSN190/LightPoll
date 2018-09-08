@@ -17,6 +17,7 @@ async function initialise () {
             name varchar(140) NOT NULL, \
             description varchar(500) NOT NULL, \
             edit_token text NOT NULL, \
+            enforce_unique boolean NOT NULL, \
             owner_id bigint REFERENCES users (id) ON DELETE CASCADE, \
             created timestamp NOT NULL, \
             modified timestamp NOT NULL)";
@@ -27,8 +28,9 @@ async function initialise () {
             created timestamp NOT NULL)";
         const createPollVotes = "CREATE TABLE IF NOT EXISTS poll_votes \
             (id bigserial PRIMARY KEY, \
-            poll_id bigint REFERENCES polls (id) NOT NULL, \
+            poll_id bigint REFERENCES polls (id) ON DELETE CASCADE NOT NULL, \
             poll_option_id bigint REFERENCES poll_options (id) ON DELETE CASCADE NOT NULL, \
+            voter text, \
             created timestamp NOT NULL)";
         await client.query(createUsers);
         await client.query(createPolls);
