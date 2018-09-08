@@ -9,7 +9,8 @@ async function initialise () {
         const createUsers = "CREATE TABLE IF NOT EXISTS users \
             (id bigserial PRIMARY KEY, \
             username varchar(30) UNIQUE NOT NULL, \
-            passHash text NOT NULL, \
+            display varchar(30) UNIQUE NOT NULL, \
+            pass_hash text NOT NULL, \
             created timestamp NOT NULL)";
         const createPolls = "CREATE TABLE IF NOT EXISTS polls \
             (id bigserial PRIMARY KEY, \
