@@ -3,6 +3,8 @@ const database = require(path.join(__dirname, "../database.js"));
 const express = require("express");
 const router = express.Router();
 const check = require("express-validator/check");
+const uidGen = new (require("uid-generator"))(256);
+const bcrypt = require("bcrypt");
 
 router.get("/poll/:id", [check.param("id").isNumeric()], async (req, res) => {
     res.type("application/json");
@@ -66,7 +68,7 @@ router.delete("/poll/:id", [check.param("id").isNumeric()], async (req, res) => 
                 values: [req.params.id]
             });
             await client.query("COMMIT");
-            res.send({ success: true, operation: "delete", id: Number(req.params.id) });
+            res.send({ success: true, operation: "deletePoll", id: Number(req.params.id) });
         } catch (e) {
             await client.query("ROLLBACK");
             console.log(e);
@@ -132,7 +134,11 @@ router.put("/poll/:id", [
                 });
             }
             await client.query("COMMIT");
-            res.send({ success: true, operation: "update", poll_id: req.params.id});
+            res.send({ 
+                success: true, 
+                operation: "updatePoll", 
+                poll_id: Number(req.params.id),
+            });
         } catch (e) {
             await client.query("ROLLBACK");
             console.log(e);
@@ -167,12 +173,14 @@ router.post("/poll", [
             try {
                 await client.query("BEGIN");
                 const now = Date.now();
+                const editToken = await uidGen.generate();
+                const editTokenHash = await bcrypt.hash(editToken, 14);
                 const description = req.body.description ? req.body.description : "";
                 const insertAndGetId = await client.query({
-                    text: "INSERT INTO polls (name, description, created, modified) \
-                        VALUES ($1, $2, to_timestamp($3/1000.0), to_timestamp($4/1000.0)) \
+                    text: "INSERT INTO polls (name, description, edit_token, created, modified) \
+                        VALUES ($1, $2, $3, to_timestamp($4/1000.0), to_timestamp($4/1000.0)) \
                         RETURNING id",
-                    values: [req.body.name, description, now, now]
+                    values: [req.body.name, description, editTokenHash, now]
                 });
                 for (let option of req.body.options) {
                     await client.query({
@@ -182,7 +190,12 @@ router.post("/poll", [
                     });
                 }
                 await client.query("COMMIT");
-                res.send({ success: true, operation: "create", poll_id: insertAndGetId.rows[0].id });
+                res.send({ 
+                    success: true, 
+                    operation: "createPoll", 
+                    poll_id: Number(insertAndGetId.rows[0].id),
+                    editToken
+                })
             } catch (e) {
                 await client.query("ROLLBACK");
                 console.log(e);

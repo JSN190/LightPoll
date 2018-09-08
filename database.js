@@ -16,6 +16,7 @@ async function initialise () {
             (id bigserial PRIMARY KEY, \
             name varchar(140) NOT NULL, \
             description varchar(500) NOT NULL, \
+            edit_token text NOT NULL, \
             owner_id bigint REFERENCES users (id) ON DELETE CASCADE, \
             created timestamp NOT NULL, \
             modified timestamp NOT NULL)";
