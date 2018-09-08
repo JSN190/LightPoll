@@ -29,7 +29,7 @@ router.post("/login", [
                         success: true,
                         operation: "login",
                         user: {
-                            id: user.rows[0].id,
+                            id: Number(user.rows[0].id),
                             username: user.rows[0].display
                         },
                         token: jwt.sign({ id: user.rows[0].id, username: user.rows[0].display }, 
