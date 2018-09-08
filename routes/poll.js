@@ -2,11 +2,11 @@ const path = require("path");
 const database = require(path.join(__dirname, "../database.js"));
 const express = require("express");
 const router = express.Router();
-const { check, param, validationResult } = require("express-validator/check");
+const check = require("express-validator/check");
 
-router.get("/poll/:id", [param("id").isNumeric()], async (req, res) => {
+router.get("/poll/:id", [check.param("id").isNumeric()], async (req, res) => {
     res.type("application/json");
-    const errors = validationResult(req);
+    const errors = check.validationResult(req);
     if (errors.isEmpty()) {
         try { 
             const record = await database.query({
@@ -45,9 +45,9 @@ router.get("/poll/:id", [param("id").isNumeric()], async (req, res) => {
     }
 });
 
-router.delete("/poll/:id", [param("id").isNumeric()], async (req, res) => {
+router.delete("/poll/:id", [check.param("id").isNumeric()], async (req, res) => {
     res.type("application/json");
-    const errors = validationResult(req);
+    const errors = check.validationResult(req);
     if (errors.isEmpty()) {
         const client = await database.connect();
         try {
@@ -80,17 +80,53 @@ router.delete("/poll/:id", [param("id").isNumeric()], async (req, res) => {
     }
 });
 
+router.put("/poll/:id", [
+    check.param("id").exists().isNumeric(),
+    check.body("name").exists().isAscii().isLength({ max: 140 }),
+    check.body("description").optional().isAscii().isLength({ max: 500 }),
+    check.body("options").exists().custom((options) => {
+        if (!Array.isArray(options) || options.length < 2) return false;
+        for (let option of options) if (option.length > 140) return false;    
+        return true;
+    })
+], async (req, res) => {
+    res.type("application/json");
+    const errors = check.validationResult(req);
+    if (errors.isEmpty()) {
+        const client = await database.connect();
+        try {
+            await client.query("BEGIN");
+            await client.query({
+                text: "UPDATE polls SET name = $1, description = $2",
+                value: [req.body.name, req.body.description, req.params.id]
+            });
+            await client.query("COMMIT");
+            res.send({ success: true, poll_id: insertAndGetId.rows[0].id });
+        } catch (e) {
+            await client.query("ROLLBACK");
+            console.log(e);
+            res.status(500);
+            res.send({ error: true });
+        } finally {
+            client.release();
+        }
+    } else {
+        res.status(400);
+        res.send({ error: true, details: errors.array() });
+    }
+});
+
 router.post("/poll", [
-        check("name").exists().isAscii().isLength({ max: 140 }),
-        check("description").optional().isAscii().isLength({ max: 500 }),
-        check("options").exists().custom((options) => {
+        check.body("name").exists().isAscii().isLength({ max: 140 }),
+        check.body("description").optional().isAscii().isLength({ max: 500 }),
+        check.body("options").exists().custom((options) => {
             if (!Array.isArray(options) || options.length < 2) return false;
             for (let option of options) if (option.length > 140) return false;    
             return true;
         })
     ], async (req, res) => {
         res.type("application/json");
-        const errors = validationResult(req);
+        const errors = check.validationResult(req);
         if (errors.isEmpty()) {
             const client = await database.connect();
             try {
