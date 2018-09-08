@@ -6,6 +6,8 @@ const check = require("express-validator/check");
 const uidGen = new (require("uid-generator"))(256);
 const bcrypt = require("bcrypt");
 const sjcl = require("sjcl");
+const jwt = require("jsonwebtoken");
+
 
 router.get("/poll/:id", [check.param("id").isNumeric()], async (req, res) => {
     res.type("application/json");
@@ -158,6 +160,7 @@ router.post("/poll", [
         check.body("name").exists().isAscii().isLength({ max: 140 }),
         check.body("description").optional().isAscii().isLength({ max: 500 }),
         check.body("enforceUnique").exists().isBoolean(),
+        check.body("anonymous").exists().isBoolean(),
         check.body("options").exists().custom((options) => {
             if (!Array.isArray(options) || options.length < 2) return false;
             let existing = [];
@@ -174,16 +177,20 @@ router.post("/poll", [
             const client = await database.connect();
             try {
                 await client.query("BEGIN");
-                const now = Date.now();
                 const editToken = await uidGen.generate();
-                const editTokenHash = await bcrypt.hash(editToken, 12);
+                const editTokenHash = await bcrypt.hash(editToken, 14);
                 const description = req.body.description ? req.body.description : "";
+                let token  = req.headers["x-access-token"];
+                try { token = jwt.verify(token, process.env.LIGHTPOLL_JWT) } 
+                catch { token = null }
+                const ownerId =  req.body.anonymous ? null : token ? token.id : null;
                 const insertAndGetId = await client.query({
                     text: "INSERT INTO polls (name, description, edit_token, enforce_unique, \
-                        created, modified) \
-                        VALUES ($1, $2, $3, $4, to_timestamp($5/1000.0), to_timestamp($5/1000.0)) \
+                        owner_id, created, modified) \
+                        VALUES ($1, $2, $3, $4, $5, to_timestamp($6/1000.0), to_timestamp($6/1000.0)) \
                         RETURNING id",
-                    values: [req.body.name, description, editTokenHash, req.body.enforceUnique, now]
+                    values: [req.body.name, description, editTokenHash, req.body.enforceUnique, 
+                            ownerId, Date.now()]
                 });
                 for (let option of req.body.options) {
                     await client.query({
@@ -240,7 +247,7 @@ router.post("/poll/:id/vote", [
                 return;
             }
             const enforceUnique = poll.rows[0].enforce_unique;
-            const hash = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(req.headers['x-forwarded-for'] 
+            const hash = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(req.headers["x-forwarded-for"] 
                         || req.connection.remoteAddress));
             if (enforceUnique) {
                 const alreadyVoted = (await client.query({
