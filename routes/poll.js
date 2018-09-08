@@ -246,13 +246,17 @@ router.post("/poll/:id/vote", [
                 res.send({ error: true, details: `Option ${req.body.value} not found.`});
                 return;
             }
+            let token = req.headers["x-access-token"];
+            try { token = jwt.verify(token, process.env.LIGHTPOLL_JWT) } 
+            catch { token = null }
             const enforceUnique = poll.rows[0].enforce_unique;
             const hash = sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(req.headers["x-forwarded-for"] 
                         || req.connection.remoteAddress));
             if (enforceUnique) {
                 const alreadyVoted = (await client.query({
-                    text: "SELECT id FROM poll_votes WHERE poll_id=$1 AND voter=$2",
-                    values: [req.params.id, hash]
+                    text: "SELECT id FROM poll_votes WHERE poll_id=$1 \
+                            AND (voter_id=$2 OR voter_ip=$3) ",
+                    values: [req.params.id, token ? token.id : -1, hash]
                 })).rows.length >= 1;
                 if (alreadyVoted) {
                     res.status(403);
@@ -261,9 +265,11 @@ router.post("/poll/:id/vote", [
                 }
             }
             await client.query({
-                text: "INSERT INTO poll_votes (poll_id, poll_option_id, voter, created) \
-                    VALUES ($1, $2, $3, to_timestamp($4/1000.0))",
-                values: [req.params.id, option.rows[0].id, enforceUnique ? hash : null, Date.now()]
+                text: "INSERT INTO poll_votes (poll_id, poll_option_id, voter_id, voter_ip, created) \
+                    VALUES ($1, $2, $3, $4, to_timestamp($5/1000.0))",
+                values: [req.params.id, option.rows[0].id, 
+                        enforceUnique ? token ? token.id : null : null, 
+                        enforceUnique ? hash : null, Date.now()]
             });
             await client.query("COMMIT");
             res.send({ success: true, operation: "vote", poll_id: req.params.id });

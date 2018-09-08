@@ -30,7 +30,8 @@ async function initialise () {
             (id bigserial PRIMARY KEY, \
             poll_id bigint REFERENCES polls (id) ON DELETE CASCADE NOT NULL, \
             poll_option_id bigint REFERENCES poll_options (id) ON DELETE CASCADE NOT NULL, \
-            voter text, \
+            voter_id bigint, \
+            voter_ip text, \
             created timestamp NOT NULL)";
         await client.query(createUsers);
         await client.query(createPolls);
