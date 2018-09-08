@@ -101,4 +101,60 @@ router.post("/register", [
         }
 });
 
+router.put("/password", [
+    check.body("username").exists().isAlphanumeric().isLength({ max: 30 }),
+    check.body("currentPassword").exists().isAscii().isLength({ min: 8, max: 72 }),
+    check.body("newPassword").exists().isAscii().isLength({ min: 8, max: 72 })
+], async (req, res) => {
+    res.type("application/json");
+    const errors = check.validationResult(req);
+    if (errors.isEmpty()) {
+        const client = await database.connect();
+        try {
+            await client.query("BEGIN");
+            const user = await client.query({
+                text: "SELECT * FROM users WHERE username=$1",
+                values: [req.body.username.toLowerCase()]
+            });
+            if (user.rows.length !== 1) {
+                res.status(404);
+                res.send({ error: true, details: `Username ${req.body.username} not found.`});
+                return;
+            }
+            const correctPassword = await bcrypt.compare(req.body.currentPassword, user.rows[0].pass_hash);
+            if (correctPassword) {
+                const hash = await bcrypt.hash(String(req.body.newPassword), 14);
+                await client.query({
+                    text: "UPDATE users SET pass_hash=$1 WHERE username=$2",
+                    values: [hash, req.body.username.toLowerCase()]
+                });
+                await client.query("COMMIT");
+                res.send({
+                    success: true,
+                    operation: "changePassword",
+                    user: {
+                        id: Number(user.rows[0].id),
+                        username: user.rows[0].display
+                    },
+                    token: jwt.sign({ id: user.rows[0].id, username: user.rows[0].display }, 
+                        process.env.LIGHTPOLL_JWT, { expiresIn: "30 days" })
+                });
+            } else {
+                res.status(403);
+                res.send({ error: true, details: `Incorrect current password.`});
+            }
+        } catch (e) {
+            console.log(e);
+            client.query("ROLLBACK");
+            res.status(500);
+            res.send({ error: true })
+        } finally {
+            client.release();
+        }
+    } else {
+        res.status(400);
+        res.send({ error: true, details: errors.array() });
+    }
+});
+
 module.exports = router;
