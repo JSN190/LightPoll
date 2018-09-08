@@ -4,6 +4,7 @@ const express = require("express");
 const router = express.Router();
 const check = require("express-validator/check");
 const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
 
 router.post("/register", [
         check.body("username").exists().isAlphanumeric().isLength({ max: 30 }),
@@ -34,7 +35,8 @@ router.post("/register", [
                     success: true, 
                     operation: "register", 
                     id: Number(user.rows[0].id),
-                    username: user.rows[0].display 
+                    username: user.rows[0].display,
+                    token: jwt.sign({ id: user.rows[0].id, username: user.rows[0].display }, process.env.LIGHTPOLL_JWT)
                 });
             } catch (e) {
                 console.log(e);
