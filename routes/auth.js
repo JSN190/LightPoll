@@ -33,9 +33,11 @@ router.post("/register", [
                 await client.query("COMMIT");
                 res.send({ 
                     success: true, 
-                    operation: "register", 
-                    id: Number(user.rows[0].id),
-                    username: user.rows[0].display,
+                    operation: "register",
+                    user: {
+                        id: Number(user.rows[0].id),
+                        username: user.rows[0].display,
+                    },
                     token: jwt.sign({ id: user.rows[0].id, username: user.rows[0].display }, process.env.LIGHTPOLL_JWT)
                 });
             } catch (e) {
