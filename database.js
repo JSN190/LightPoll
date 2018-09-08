@@ -37,7 +37,6 @@ async function initialise () {
         await client.query(createPolls);
         await client.query(createPollOptions);
         await client.query(createPollVotes);
-        //await client.query(setPollModified);
         await client.query("COMMIT");
         console.log(`Connected to PostgreSQL.`);
     } catch (e) {
