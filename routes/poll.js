@@ -8,7 +8,6 @@ const bcrypt = require("bcrypt");
 const sjcl = require("sjcl");
 const jwt = require("jsonwebtoken");
 
-
 router.get("/poll/:id", [check.param("id").isNumeric()], async (req, res) => {
     res.type("application/json");
     const errors = check.validationResult(req);
@@ -50,46 +49,66 @@ router.get("/poll/:id", [check.param("id").isNumeric()], async (req, res) => {
     }
 });
 
-router.delete("/poll/:id", [check.param("id").isNumeric()], async (req, res) => {
-    res.type("application/json");
-    const errors = check.validationResult(req);
-    if (errors.isEmpty()) {
-        const client = await database.connect();
-        try {
-            await client.query("BEGIN");
-            const exists = (await client.query({
-                text: "SELECT FROM polls WHERE id=$1",
-                values: [req.params.id]
-            })).rows.length === 1;
-            if (!exists) {
-                res.status(404);
-                res.send({ error: true, details: `Poll ${req.params.id} not found.`});
-                return;
+router.delete("/poll/:id", [
+    check.param("id").isNumeric(),
+    check.body("editToken").optional().isAlphanumeric()
+    ], 
+    async (req, res) => {
+        res.type("application/json");
+        const errors = check.validationResult(req);
+        if (errors.isEmpty()) {
+            const client = await database.connect();
+            try {
+                await client.query("BEGIN");
+                const poll = (await client.query({
+                    text: "SELECT * FROM polls WHERE id=$1",
+                    values: [req.params.id]
+                }));
+                if (poll.rows.length !== 1) {
+                    res.status(404);
+                    res.send({ error: true, details: `Poll ${req.params.id} not found.`});
+                    return;
+                }
+                let token  = req.headers["x-access-token"];
+                try { token = jwt.verify(token, process.env.LIGHTPOLL_JWT) } 
+                catch { token = null }
+                const haveEditToken = req.body.editToken ? await bcrypt.compare(req.body.editToken, 
+                    poll.rows[0].edit_token) : false;
+                const isOwner = token ? token.id === Number(poll.rows[0].owner_id) : false;
+                if (!haveEditToken && !isOwner ) {
+                    res.status(401);
+                    res.send({ 
+                        error: true,
+                        details: `You do not have permission to delete poll ${req.params.id}.` 
+                    });
+                    return;
+                }
+                await client.query({
+                    text: "DELETE FROM polls WHERE id=$1",
+                    values: [req.params.id]
+                });
+                await client.query("COMMIT");
+                res.send({ success: true, operation: "deletePoll", id: Number(req.params.id) });
+            } catch (e) {
+                await client.query("ROLLBACK");
+                console.log(e);
+                res.status(500);
+                res.send({ error: true });
+            } finally {
+                client.release();
             }
-            await client.query({
-                text: "DELETE FROM polls WHERE id=$1",
-                values: [req.params.id]
-            });
-            await client.query("COMMIT");
-            res.send({ success: true, operation: "deletePoll", id: Number(req.params.id) });
-        } catch (e) {
-            await client.query("ROLLBACK");
-            console.log(e);
-            res.status(500);
-            res.send({ error: true });
-        } finally {
-            client.release();
+        } else {
+            res.status(400);
+            res.send({ error: true, details: errors.array() });
         }
-    } else {
-        res.status(400);
-        res.send({ error: true, details: errors.array() });
-    }
 });
 
 router.put("/poll/:id", [
     check.param("id").exists().isNumeric(),
     check.body("name").exists().isAscii().isLength({ max: 140 }),
     check.body("description").optional().isAscii().isLength({ max: 500 }),
+    check.body("enforceUnique").exists().isBoolean(),
+    check.body("anonymous").exists().isBoolean(),
     check.body("options").exists().custom((options) => {
         if (!Array.isArray(options) || options.length < 2) return false;
             let existing = [];
@@ -98,7 +117,8 @@ router.put("/poll/:id", [
                 existing.push(option);
             }
             return true;
-    })
+    }),
+    check.body("editToken").optional().isAlphanumeric()
 ], async (req, res) => {
     res.type("application/json");
     const errors = check.validationResult(req);
@@ -107,19 +127,35 @@ router.put("/poll/:id", [
         try {
             await client.query("BEGIN");
             const description = req.body.description ? req.body.description : "";
-            const exists = (await client.query({
-                text: "SELECT FROM polls WHERE id=$1",
+            const poll = await client.query({
+                text: "SELECT * FROM polls WHERE id=$1",
                 values: [req.params.id]
-            })).rows.length === 1;
-            if (!exists) {
+            });
+            if (poll.rows.length !== 1) {
                 res.status(404);
                 res.send({ error: true, details: `Poll ${req.params.id} not found.`});
                 return;
             }
+            let token  = req.headers["x-access-token"];
+            try { token = jwt.verify(token, process.env.LIGHTPOLL_JWT) } 
+            catch { token = null }
+            const haveEditToken = req.body.editToken ? await bcrypt.compare(req.body.editToken, 
+                poll.rows[0].edit_token) : false;
+            const isOwner = token ? token.id === Number(poll.rows[0].owner_id) : false;
+            const ownerId =  req.body.anonymous ? null : token ? token.id : null;
+            if (!haveEditToken && !isOwner ) {
+                res.status(401);
+                res.send({ 
+                    error: true,
+                    details: `You do not have permission to edit poll ${req.params.id}.` 
+                });
+                return;
+            }
             await client.query({
-                text: "UPDATE polls SET name=$1, description=$2, modified=to_timestamp($3/1000.0) \
-                WHERE id=$4",
-                values: [req.body.name, description, Date.now(), req.params.id]
+                text: "UPDATE polls SET name=$1, description=$2, modified=to_timestamp($3/1000.0), \
+                enforce_unique=$4, owner_id=$5 WHERE id=$6",
+                values: [req.body.name, description, Date.now(), req.body.enforceUnique,
+                    ownerId, req.params.id]
             });
             await client.query({
                 text: "DELETE FROM poll_options WHERE NOT(value = ANY($1)) AND poll_id=$2",
