@@ -28,10 +28,6 @@ async function initialise () {
             poll_id bigint REFERENCES polls (id) NOT NULL, \
             poll_option_id bigint REFERENCES poll_options (id) ON DELETE CASCADE NOT NULL, \
             created timestamp NOT NULL)";
-        const setPollModified = "CREATE FUNCTION set_poll_modified() RETURNS \
-            TRIGGER AS $$ BEGIN NEW.modified :=NOW(); RETURN NEW; END; $$ LANGUAGE plpgsql; \
-            CREATE TRIGGER set_poll_modified BEFORE UPDATE ON polls FOR EACH ROW \
-            EXECUTE PROCEDURE set_poll_modified();";
         await client.query(createUsers);
         await client.query(createPolls);
         await client.query(createPollOptions);
