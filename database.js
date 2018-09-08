@@ -17,7 +17,7 @@ async function initialise () {
             description varchar(500) NOT NULL, \
             owner_id bigint REFERENCES users (id) ON DELETE CASCADE, \
             created timestamp NOT NULL, \
-            modified timestamp)";
+            modified timestamp NOT NULL)";
         const createPollOptions = "CREATE TABLE IF NOT EXISTS poll_options \
             (id bigserial PRIMARY KEY, \
             poll_id bigint REFERENCES polls (id) ON DELETE CASCADE NOT NULL, \
