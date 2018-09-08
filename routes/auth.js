@@ -36,7 +36,7 @@ router.post("/login", [
                             process.env.LIGHTPOLL_JWT, { expiresIn: "30 days" })
                     });
                 } else {
-                    res.status(403);
+                    res.status(401);
                     res.send({ error: true, details: `Incorrect password.`});
                     return;
                 }
@@ -140,7 +140,7 @@ router.put("/password", [
                         process.env.LIGHTPOLL_JWT, { expiresIn: "30 days" })
                 });
             } else {
-                res.status(403);
+                res.status(401);
                 res.send({ error: true, details: `Incorrect current password.`});
             }
         } catch (e) {
