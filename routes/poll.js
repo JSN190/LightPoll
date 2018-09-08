@@ -142,7 +142,7 @@ router.put("/poll/:id", [
             const haveEditToken = req.body.editToken ? await bcrypt.compare(req.body.editToken, 
                 poll.rows[0].edit_token) : false;
             const isOwner = token ? token.id === Number(poll.rows[0].owner_id) : false;
-            const ownerId =  req.body.anonymous ? null : token ? token.id : null;
+            const ownerId = req.body.anonymous ? null : token ? token.id : poll.rows[0].owner_id;
             if (!haveEditToken && !isOwner ) {
                 res.status(401);
                 res.send({ 
