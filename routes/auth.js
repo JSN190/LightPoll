@@ -33,7 +33,7 @@ router.post("/login", [
                             username: user.rows[0].display
                         },
                         token: jwt.sign({ id: user.rows[0].id, username: user.rows[0].display }, 
-                            process.env.LIGHTPOLL_JWT)
+                            process.env.LIGHTPOLL_JWT, { expiresIn: "30 days" })
                     });
                 } else {
                     res.status(403);
@@ -84,7 +84,8 @@ router.post("/register", [
                         id: Number(user.rows[0].id),
                         username: user.rows[0].display,
                     },
-                    token: jwt.sign({ id: user.rows[0].id, username: user.rows[0].display }, process.env.LIGHTPOLL_JWT)
+                    token: jwt.sign({ id: user.rows[0].id, username: user.rows[0].display }, 
+                        process.env.LIGHTPOLL_JWT, { expiresIn: "30 days" })
                 });
             } catch (e) {
                 console.log(e);
