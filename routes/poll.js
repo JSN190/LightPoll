@@ -293,10 +293,16 @@ router.post("/poll/:id/vote", [
             });
             await client.query("COMMIT");
             res.send({ success: true, operation: "vote", poll_id: req.params.id });
+            const now = new Date();
+            const response = JSON.stringify({
+                poll: await getPollAndVotes(req.params.id),
+                datetime: now.getTime(),
+                datetimeString: now.toUTCString()
+            });
             for (let stream of streams) {
                 if (stream) {
                     for (let listener of stream) {
-                        listener.write(`event: vote\ndata: ${await getPollAndVotes(req.params.id)}\n\n`);
+                        listener.write(`event: vote\ndata: ${response}\n\n`);
                     }
                 }
             }
