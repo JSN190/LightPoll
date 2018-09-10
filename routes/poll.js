@@ -334,7 +334,7 @@ router.get("/poll/:id/stream", [check.param("id").isNumeric()], async (req, res)
         try { 
             const poll = await getPollAndVotes(req.params.id);
             if (!poll) {
-                res.write(`event: message\ndata: Poll ${req.params.id} not found.\n\n`);
+                res.write(`event: error\ndata: Poll ${req.params.id} not found.\n\n`);
                 res.end();
                 return;
             }
@@ -343,16 +343,16 @@ router.get("/poll/:id/stream", [check.param("id").isNumeric()], async (req, res)
             streams[req.params.id].push(res);
             setTimeout(() => {
                 streams[req.params.id] = streams[req.params.id].filter(e => e !== res);
-                res.write("event: message\ndata: Session timeout. Please reconnect.\n\n");
+                res.write("event: timeout\ndata: Session timeout. Please reconnect.\n\n");
                 res.end();
             }, 600000);
         } catch (e) {
             console.log(e);
-            res.write(`event: message\ndata: An unexpected error has occured.\n\n`);
+            res.write(`event: error\ndata: An unexpected error has occured.\n\n`);
             res.end();
         }
     } else {
-        res.write(`event: message\ndata: Invalid poll ID.\n\n`);
+        res.write(`event: error\ndata: Invalid poll ID.\n\n`);
         res.end();
     }
 })
