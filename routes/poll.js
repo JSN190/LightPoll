@@ -301,7 +301,11 @@ router.post("/poll/:id/vote", [
             });
             if (Array.isArray(streams[req.params.id])) {
                 for (let listener of streams[req.params.id]) {
-                    listener.write(`event: vote\ndata: ${response}\n\n`);
+                    try {
+                        listener.write(`event: vote\ndata: ${response}\n\n`);
+                    } catch {
+                        streams[req.params.id] = streams[req.params.id].filter(e => e !== res);
+                    }
                 }
             }
         } catch (e) {
