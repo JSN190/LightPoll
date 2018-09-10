@@ -304,7 +304,7 @@ router.post("/poll/:id/vote", [
                     try {
                         listener.write(`event: vote\ndata: ${response}\n\n`);
                     } catch {
-                        streams[req.params.id] = streams[req.params.id].filter(e => e !== res);
+                        streams[req.params.id] = streams[req.params.id].filter(e => e !== listener);
                     }
                 }
             }
