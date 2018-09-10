@@ -299,11 +299,9 @@ router.post("/poll/:id/vote", [
                 datetime: now.getTime(),
                 datetimeString: now.toUTCString()
             });
-            for (let stream of streams) {
-                if (stream) {
-                    for (let listener of stream) {
-                        listener.write(`event: vote\ndata: ${response}\n\n`);
-                    }
+            if (Array.isArray(streams[req.params.id])) {
+                for (let listener of streams[req.params.id]) {
+                    listener.write(`event: vote\ndata: ${response}\n\n`);
                 }
             }
         } catch (e) {
