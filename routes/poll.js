@@ -8,36 +8,20 @@ const bcrypt = require("bcrypt");
 const sjcl = require("sjcl");
 const jwt = require("jsonwebtoken");
 
+const streams = [];
+
 router.get("/poll/:id", [check.param("id").isNumeric()], async (req, res) => {
     res.type("application/json");
     const errors = check.validationResult(req);
     if (errors.isEmpty()) {
         try { 
-            const record = await database.query({
-                text: "SELECT polls.*, count(poll_votes.id) AS total_votes FROM polls \
-                    LEFT JOIN poll_votes ON polls.id = poll_votes.poll_id WHERE polls.id=$1 \
-                    GROUP BY polls.id",
-                values: [req.params.id]
-            });
-            if (record.rows.length !== 1) {
+            const poll = await getPollAndVotes(req.params.id);
+            if (!poll) {
                 res.status(404);
-                res.send({ error: true, details: `Poll ${req.params.id} not found.`});
+                res.send({ error: true, details: `Poll ${req.params.id} not found.` });
                 return;
             }
-            const options = await database.query({
-                text: "SELECT poll_options.id, poll_options.value, count(poll_votes.id) AS votes \
-                FROM poll_options LEFT JOIN poll_votes ON poll_options.id = poll_votes.poll_option_id \
-                WHERE poll_options.poll_id=$1 GROUP BY poll_options.id",
-                values: [record.rows[0].id]
-            });
-            res.send({ 
-                id: Number(record.rows[0].id),
-                name: record.rows[0].name,
-                description: record.rows[0].description,
-                options: options.rows.map(e => { return { value: e.value, votes: Number(e.votes) } }),
-                totalVotes: Number(record.rows[0].total_votes),
-                created: record.rows[0].created
-            });
+            res.send(poll);
         } catch (e) {
             console.log(e);
             res.status(500);
@@ -309,6 +293,13 @@ router.post("/poll/:id/vote", [
             });
             await client.query("COMMIT");
             res.send({ success: true, operation: "vote", poll_id: req.params.id });
+            for (let stream of streams) {
+                if (stream) {
+                    for (let listener of stream) {
+                        listener.write(`event: vote\ndata: ${await getPollAndVotes(req.params.id)}\n\n`);
+                    }
+                }
+            }
         } catch (e) {
             await client.query("ROLLBACK");
             console.log(e);
@@ -322,5 +313,72 @@ router.post("/poll/:id/vote", [
         res.send({ error: true, details: errors.array() });
     }
 });
+
+router.get("/poll/:id/stream", [check.param("id").isNumeric()], async (req, res) => {
+    res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive"
+    });
+    res.write("event: message\ndata: Connected to stream.\n\n");
+    const errors = check.validationResult(req);
+    if (errors.isEmpty()) {
+        try { 
+            const poll = await getPollAndVotes(req.params.id);
+            if (!poll) {
+                res.write(`event: message\ndata: Poll ${req.params.id} not found.\n\n`);
+                res.end();
+                return;
+            }
+            res.write(`event: current\ndata: ${poll}\n\n`);
+            if (!streams[req.params.id]) streams[req.params.id] = [];
+            streams[req.params.id].push(res);
+            setTimeout(() => {
+                streams[req.params.id] = streams[req.params.id].filter(e => e !== res);
+                res.write("event: message\ndata: Session timeout. Please reconnect.\n\n");
+                res.end();
+            }, 600000);
+        } catch (e) {
+            console.log(e);
+            res.write(`event: message\ndata: An unexpected error has occured.\n\n`);
+            res.end();
+        }
+    } else {
+        res.write(`event: message\ndata: Invalid poll ID.\n\n`);
+        res.end();
+    }
+})
+
+async function getPollAndVotes(id) {
+    const record = await database.query({
+        text: "SELECT polls.*, count(poll_votes.id) AS total_votes FROM polls \
+            LEFT JOIN poll_votes ON polls.id = poll_votes.poll_id WHERE polls.id=$1 \
+            GROUP BY polls.id",
+        values: [id]
+    });
+    if (record.rows.length === 1) {
+        const options = await database.query({
+            text: "SELECT poll_options.id, poll_options.value, count(poll_votes.id) AS votes \
+            FROM poll_options LEFT JOIN poll_votes ON poll_options.id = poll_votes.poll_option_id \
+            WHERE poll_options.poll_id=$1 GROUP BY poll_options.id",
+            values: [record.rows[0].id]
+        });
+        const poll = JSON.stringify({
+            id: Number(record.rows[0].id),
+            name: record.rows[0].name,
+            description: record.rows[0].description,
+            options: options.rows.map(e => {
+                return {
+                    value: e.value,
+                    votes: Number(e.votes)
+                }
+            }),
+            totalVotes: Number(record.rows[0].total_votes),
+            created: record.rows[0].created
+        });
+        return poll;
+    }
+    return false;
+}
 
 module.exports = router;
