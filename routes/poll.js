@@ -198,7 +198,7 @@ router.post("/poll", [
             try {
                 await client.query("BEGIN");
                 const editToken = await uidGen.generate();
-                const editTokenHash = await bcrypt.hash(editToken, 14);
+                const editTokenHash = await bcrypt.hash(editToken, 12);
                 const description = req.body.description ? req.body.description : "";
                 let token  = req.headers["x-access-token"];
                 try { token = jwt.verify(token, process.env.LIGHTPOLL_JWT) } 
@@ -344,8 +344,8 @@ router.get("/poll/:id/stream", [check.param("id").isNumeric()], async (req, res)
             setTimeout(() => {
                 streams[req.params.id] = streams[req.params.id].filter(e => e !== res);
                 res.write("event: timeout\ndata: Session timeout. Please reconnect.\n\n");
-                res.end();
-            }, 600000);
+                setTimeout(() =>res.end(), 100);
+            }, 500000);
         } catch (e) {
             console.log(e);
             res.write(`event: error\ndata: An unexpected error has occured.\n\n`);
@@ -371,6 +371,14 @@ async function getPollAndVotes(id) {
             WHERE poll_options.poll_id=$1 GROUP BY poll_options.id",
             values: [record.rows[0].id]
         });
+        const votes = await database.query({
+            text: "SELECT * FROM poll_votes WHERE poll_id=$1 ORDER BY created DESC",
+            values: [id]
+        });
+        const voters = record.rows[0].enforce_unique ? Array.from(votes.rows.reduce((acc, v) => {
+            if (!v.voter_id && !v.voter_ip) return acc;
+            return acc.add(v.voter_id + v.voter_ip);
+        }, new Set())).length : "unlimited";
         const poll = JSON.stringify({
             id: Number(record.rows[0].id),
             name: record.rows[0].name,
@@ -381,8 +389,11 @@ async function getPollAndVotes(id) {
                     votes: Number(e.votes)
                 }
             }),
+            voters,
             totalVotes: Number(record.rows[0].total_votes),
-            created: record.rows[0].created
+            latestVote: votes.rows[0] ? Number(votes.rows[0].created) : null,
+            created: record.rows[0].created,
+            modified: record.rows[0].modified
         });
         return poll;
     }
