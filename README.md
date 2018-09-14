@@ -12,7 +12,6 @@ The API is written using JavaScript, Node.js, Express.js and PostgreSQL.
 
 ## License
 ```
-
 MIT License
 
 Copyright (c) 2018 John Su
