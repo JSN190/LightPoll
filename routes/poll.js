@@ -198,7 +198,7 @@ router.post("/poll", [
             try {
                 await client.query("BEGIN");
                 const editToken = await uidGen.generate();
-                const editTokenHash = await bcrypt.hash(editToken, 12);
+                const editTokenHash = await bcrypt.hash(editToken, 11);
                 const description = req.body.description ? req.body.description : "";
                 let token  = req.headers["x-access-token"];
                 try { token = jwt.verify(token, process.env.LIGHTPOLL_JWT) } 
