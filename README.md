@@ -26,7 +26,7 @@ Afterwards, start and daemonise `app.js` using a process manager such as `pm2` o
 
 ## Frontend Example
 
-And for demonstration purposes here's an example of the LightPoll backend working with a frontend web application
+And for demonstration purposes, here's an example of the LightPoll backend working with a frontend web application
 at [LightPoll.org](https://lightpoll.org).
 
 ![Lightpoll.org Voting](https://i.imgur.com/w0335bd.gif)
