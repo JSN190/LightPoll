@@ -24,6 +24,12 @@ Afterwards, start and daemonise `app.js` using a process manager such as `pm2` o
 |`LIGHTPOLL_PORT`| Port number to run the Express.js server from. 
 |`LIGHTPOLL_DB`  | PostgreSQL [Connection URI String](https://www.postgresql.org/docs/current/static/libpq-connect.html#LIBPQ-CONNSTRING).|
 
+## Lightpoll.org Frontend
+
+And for demonstration purposes here's a demonstration of the LightPoll backend working with a frontend web application.
+
+![Lightpoll.org Voting](https://i.imgur.com/w0335bd.gif)
+
 ## License
 ```
 MIT License
