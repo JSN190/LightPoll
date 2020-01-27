@@ -2,7 +2,8 @@
 ![Repository Size](https://img.shields.io/github/repo-size/JSN190/LightPoll.svg?t&style=flat-square)
 ![License](https://img.shields.io/github/license/JSN190/LightPoll.svg?&style=flat-square)
 ![Top Language](https://img.shields.io/github/languages/top/JSN190/LightPoll.svg?&style=flat-square)
-![Website Uptime](https://img.shields.io/website-up-down-green-red/http/www.lightpoll.org.svg?label=lightpoll.org&style=flat-square)
+![Website Uptime](https://img.shields.io/website-up-down-green-red/http/lightpoll.tyncture.dev.svg?label=lightpoll.tyncture.dev&style=flat-square)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/66474294-5d8d-4286-b610-58d8f85a07d7/deploy-status)](https://app.netlify.com/sites/distracted-payne-6d9638/deploys)
 
 LightPoll is a server-side web application that allows realtime online web polls to be created and shared instantaneously. It
 exposes a RESTful JSON API that allows for full integration with any program or service and a Server-sent Events stream that 
@@ -27,9 +28,9 @@ Afterwards, start and daemonise `app.js` using a process manager such as `pm2` o
 ## Frontend Example
 
 And for demonstration purposes, here's an example of the LightPoll backend working with a frontend web application
-at [LightPoll.org](https://lightpoll.org).
+at [lightpol.tyncture.dev](https://lightpoll.tyncture.dev/).
 
-![Lightpoll.org Voting](https://i.imgur.com/w0335bd.gif)
+![LightPoll Voting](https://i.imgur.com/w0335bd.gif)
 
 ## License
 ```
