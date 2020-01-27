@@ -9,14 +9,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/JSN190/LightPoll.git"
+    "url": "git+https://github.com/Tyncture/LightPoll.git"
   },
   "author": "John Su",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/JSN190/LightPoll/issues"
+    "url": "https://github.com/Tyncture/LightPoll/issues"
   },
-  "homepage": "https://github.com/JSN190/LightPoll#readme",
+  "homepage": "https://github.com/Tyncture/LightPoll#readme",
   "dependencies": {
     "bcrypt": "^3.0.0",
     "cors": "^2.8.4",
