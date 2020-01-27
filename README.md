@@ -10,7 +10,7 @@ exposes a RESTful JSON API that allows for full integration with any program or 
 instantly dispatches new poll data to connected clients as it has been processed.
 
 It can either be deployed as a standalone backend application and API or as part of a full stack with an instance of 
-[LightPoll Web](https://github.com/JSN190/LightPoll-Web) on the frontend. It is written with Node.js + Express.js and uses 
+[LightPoll Web](https://github.com/Tyncture/LightPoll-web) on the frontend. It is written with Node.js + Express.js and uses 
 PostgreSQL to store data.
 
 ## Installation
