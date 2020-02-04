@@ -3,7 +3,7 @@
 ![License](https://img.shields.io/github/license/JSN190/LightPoll.svg?&style=flat-square)
 ![Top Language](https://img.shields.io/github/languages/top/JSN190/LightPoll.svg?&style=flat-square)
 ![Website Uptime](https://img.shields.io/website-up-down-green-red/http/lightpoll.tyncture.dev.svg?label=lightpoll.tyncture.dev&style=flat-square)
-[![Build Status](https://ci.tyncture.dev/job/LightPoll/badge/icon)](https://ci.tyncture.dev/job/LightPoll/)
+[![Build Status](https://ci.tyncture.dev/buildStatus/icon?job=LightPoll)](https://ci.tyncture.dev/job/LightPoll/)
 [![Netlify Status](https://api.netlify.com/api/v1/badges/66474294-5d8d-4286-b610-58d8f85a07d7/deploy-status)](https://app.netlify.com/sites/distracted-payne-6d9638/deploys)
 
 LightPoll is a server-side web application that allows realtime online web polls to be created and shared instantaneously. It
