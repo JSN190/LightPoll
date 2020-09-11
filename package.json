@@ -24,7 +24,7 @@
     "express": "^4.16.3",
     "express-validator": "^5.3.0",
     "jsonwebtoken": "^8.3.0",
-    "node-fetch": "^2.2.0",
+    "node-fetch": "^2.6.1",
     "path": "^0.12.7",
     "pg": "^7.4.3",
     "sjcl": "^1.0.7",
